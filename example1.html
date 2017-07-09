@@ -1,0 +1,110 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <style>
+    /*
+      When a language string cannot be found during switching
+      the element will assign the style of the options.notFound setting. 
+      In default configuration this is named "lang-not-found"
+      Here we set the style of the class that will indicate 
+      that a language string was not found.
+     */
+    .lang-not-found::before { content: "!!"; color: red; }
+    .lang-not-found::after { content: "!!"; color: red; }
+    .lang-not-found { color: red; font-style: italic }
+    </style>
+
+  </head>
+  <body>
+    <!--
+      We use the "data-lang-switch" attribute to automatically 
+      enable language switching thru this element. The value 
+      of the attribute must contain the language to switch to.
+      -->
+    <button data-lang-switch="en-US">English</button>
+    <button data-lang-switch="de-DE">Deutsch</button>
+    <button data-lang-switch="es-ES">Español</button>
+    <hr>
+
+    <!--
+      With the attribute "data-lang-ckey" we will specify what
+      language string will be set for the content of this element.
+      -->
+    <h1 data-lang-ckey="catalog">Catalog</h1>
+    <h4 data-lang-ckey="northern">Northern</h4>
+    <!--
+      In this example we also set a tkey for the title attribute.
+      This way we can also localize the popup title of the element.
+      -->
+    <small data-lang-ckey="last_update" data-lang-tkey="last_update_tt">Last update:</small>
+
+    <!--
+      This example show how to build hierachical keys.
+      However array indicies, i.e. "module[1].t1" are not allowed here!
+      -->
+    <p data-lang-ckey="moduleA[t1]">-</p>
+    <p data-lang-ckey="moduleA.t2">-</p>
+    <p data-lang-ckey="moduleB.t1">-</p>
+    <p data-lang-ckey="moduleB.t2">-</p>
+
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="mini-i18n.js"></script>
+
+    <script>
+
+    var text_deDE = {
+          'catalog': 'Katalog',
+          'northern': 'nördlich',
+          'last_update': 'Letzte Aktualisierung',
+          'last_update_tt': 'Zeigt den Zeitpunkt der letzten Aktualisierung an.',
+          'moduleA': {
+            't1': 'Modul A, Typ 1',
+            't2': 'Modul A, Typ 2'
+          },
+          'moduleB': {
+            't1': 'Modul B, Typ 1',
+            't2': 'Modul B, Typ 2'
+          }
+        },
+        text_enUS = {
+          'catalog': 'Catalog',
+          'northern': 'nothern',
+          'last_update': 'Last update',
+          'last_update_tt': 'Displays date and time of the last update.',          
+          'moduleA': {
+            't1': 'Module A, Type 1',
+            't2': 'Module A, Type 2'
+          },
+          'moduleB': {
+            't1': 'Module B, Type 1',
+            't2': 'Module B, Type 2'
+          },
+        },
+        text_esES = {
+          'catalog': 'catalogar',
+          'last_update': 'última actualización',
+          'moduleB': {
+            't1': 'Módulo B, Tipo 1',
+            't2': 'Módulo B, Tipo 2'
+          },
+          
+        }
+        ;
+
+    $.fn.miniI18n({ 
+      data: {
+        'de-DE': text_deDE,
+        'en-US': text_enUS,
+        'es-ES': text_esES
+      }
+    });
+
+    $(function() {
+      // After the document has been loaded initialize the ui to german 'de-DE'
+      $.fn.miniI18n('en-US');
+    });
+    </script>
+
+  </body>
+</html>
