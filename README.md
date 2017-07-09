@@ -28,8 +28,8 @@ Here is a minimal working example:
     <small data-lang-ckey="last_update">Last update:</small>
 
     <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
-    <script src="https://github.com/AndiSHFR/mini-i18n.js/raw/master/mini-i18njs"></script>
-
+    <script src="https://raw.githubusercontent.com/AndiSHFR/mini-i18n.js/master/mini-i18n.js"></script>
+    
     <script>
     $.fn.miniI18n({ 
       data: {
