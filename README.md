@@ -67,7 +67,7 @@ Use this attribute to mark an element that is able to switch the language. i.e. 
 ``` 
 
 ## __data-lang-ckey__
-Use this attribute to set the öanguage text key for the content of the element.
+Use this attribute to set the language text key for the content of the element.
 
 ```html
 <label data-lang-ckey="fname">...</label><input type="text" />
