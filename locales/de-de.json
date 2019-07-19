@@ -1,0 +1,14 @@
+{
+  "catalog": "Katalog",
+  "northern": "nördlich",
+  "last_update": "Letzte Aktualisierung",
+  "last_update_tt": "Zeigt den Zeitpunkt der letzten Aktualisierung an.",
+  "moduleA": {
+    "t1": "Modul A, Typ 1",
+    "t2": "Modul A, Typ 2"
+  },
+  "moduleB": {
+    "t1": "Modul B, Typ 1",
+    "t2": "Modul B, Typ 2"
+  }
+}

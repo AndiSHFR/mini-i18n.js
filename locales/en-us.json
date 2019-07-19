@@ -1,0 +1,14 @@
+{
+  "catalog": "Catalog",
+  "northern": "nothern",
+  "last_update": "Last update",
+  "last_update_tt": "Displays date and time of the last update.",          
+  "moduleA": {
+    "t1": "Module A, Type 1",
+    "t2": "Module A, Type 2"
+  },
+  "moduleB": {
+    "t1": "Module B, Type 1",
+    "t2": "Module B, Type 2"
+  }
+}
