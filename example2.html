@@ -1,0 +1,80 @@
+<html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+      <title>Example mini-i18n</title>
+      <link rel="icon" type="image/x-icon"  href="favicon.ico">
+      <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
+  
+    <style>
+    /*
+      When a language string cannot be found during switching
+      the element will assign the style of the options.notFound setting. 
+      In default configuration this is named "lang-not-found"
+      Here we set the style of the class that will indicate 
+      that a language string was not found.
+     */
+    .lang-not-found::before { content: "!!"; color: red; }
+    .lang-not-found::after { content: "!!"; color: red; }
+    .lang-not-found { color: red; font-style: italic }
+    </style>
+
+  </head>
+  <body>
+    <!--
+      We use the "data-lang-switch" attribute to automatically 
+      enable language switching thru this element. The value 
+      of the attribute must contain the language to switch to.
+      -->
+    <button data-lang-switch="en-US">English</button>
+    <button data-lang-switch="de-DE">Deutsch</button>
+    <button data-lang-switch="es-ES">Español</button>
+    <hr>
+
+    <!--
+      With the attribute "data-lang-ckey" we will specify what
+      language string will be set for the content of this element.
+      -->
+    <h1 data-lang-ckey="catalog">Catalog</h1>
+    <h4 data-lang-ckey="northern">Northern</h4>
+    <!--
+      In this example we also set a tkey for the title attribute.
+      This way we can also localize the popup title of the element.
+      -->
+    <small data-lang-ckey="last_update" data-lang-tkey="last_update_tt">Last update:</small>
+
+    <!--
+      This example show how to build hierachical keys.
+      However array indicies, i.e. "module[1].t1" are not allowed here!
+      -->
+    <p data-lang-ckey="moduleA[t1]">-</p>
+    <p data-lang-ckey="moduleA.t2">-</p>
+    <p data-lang-ckey="moduleB.t1">-</p>
+    <p data-lang-ckey="moduleB.t2">-</p>
+
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="mini-i18n.js"></script>
+
+    <script>
+
+    $.fn.miniI18n(
+      { 
+        debug: true,
+        source: function(locale) { return './locales/' + locale.toLowerCase() + '.json'; },
+        changed: function(err, locale, data) {
+          if(err) console.log('Error:', err);
+          console.log('Locale changed to :', locale);
+        }
+      }
+    );
+
+    $(function() {
+      // After the document has been loaded initialize the ui to german 'de-DE'
+      $.fn.miniI18n('de-DE');
+    });
+    </script>
+
+  </body>
+</html>
