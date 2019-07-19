@@ -8,7 +8,8 @@
  * @file 
  * JavaScript module to switch text elements in a web page on the fly.
  * The intended use is for switching display language on a web page.
- * 
+ * For language IDs see http://www.localeplanet.com/icu/iso639.html 
+ *                   or https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
  */
 
 if ('undefined' === typeof jQuery) {
@@ -24,128 +25,198 @@ if ('undefined' === typeof jQuery) {
 }(jQuery);
 
 
+
 +function(window, $, undefined) {
   'use strict';
 
   // PRIVATE
 
-      // Help overcome console issues under IE when dev tools are not enabled but debug is set to true.
-  var console = (window.console = window.console || {}),
+  var 
+    
+    err = undefined,
+    
+    // Available language texts strings
+    languageData = {},
 
-      // Global options for this module
-      options = {
-        // True will output debug information on the developer console
-        debug: false,
-        // css style to be applied to the element if the language text for the key was not found
-        notFound: 'lang-not-found',
-        // If set this points to a RESTful api to GET the language text
-        api: undefined,
-        // User callback to be called _before_ a text is assigned to an element.
-        // If the callback returns true the default behaviour will not be executed.
-        onItem: undefined,
-        // Data cache for already loaded/used languages
-        data: []
-      },
+    // Global options for this module
+    options = {
+      // True will output debug information on the developer console
+      debug: false,       
+      // css style to be applied to the element if the language text for the key was not found
+      notFound: 'lang-not-found',
+      // Uri to download locale texts. Must contain language placeholder. i.e. /locale/{{LANG}}.json
+      source: undefined,
+      // User callback to be called _before_ a text is assigned to an element.
+      // If the callback returns true the default behaviour will not be executed.
+      onItem: undefined,
+      // User function called after the localization has taken place. 
+      changed: undefined,
+      // Either the language data, a callback to return the language data or an url to fetch the language data
+      data: undefined
+    },
 
-      /**
-       * Output debug information to the developer console
-       *
-       * @param {object} args_
-       * @return
-       * @api private
-       */
-      debug = function(args_) {
-        if(options.debug) {
-          var args = [].slice.call(arguments);
-          args.unshift('mini-i18n: ');
-          console.log.apply(null, args);
-        }
-      },  
+    /**
+     * Output debug information to the developer console
+     *
+     * @param {object} args_
+     * @return
+     * @api private
+     */
+    debug = function(args_) {
+      if(console && options.debug) {
+        var args = [].slice.call(arguments);
+        args.unshift('mini-i18n: ');
+        console.log.apply(null, args);
+      }
+    },  
 
-      /**
-       * Get a value from an object by its path
-       *
-       * @param {object} obj
-       * @param {string} path
-       * @return {object}
-       * @api private
-       */
-      deepValue = function(obj, path) {
-        if('string' !== typeof path) return obj;
-        path = path.replace(/\[(\w+)\]/g, '.$1');   // convert indexes to properties
-        path = path.replace(/^\./, '').split('.');  // strip a leading dot and split at dots
-        var i = 0, len = path.length;               
-        while(obj && i < len) {
-          obj = obj[path[i++]];
-        }
-        return obj;
-      },
+    /**
+     * Get a value from an object by its path
+     *
+     * @param {object} obj
+     * @param {string} path
+     * @return {object}
+     * @api private
+     */
+    deepValue = function(obj, path) {
+      if('string' !== typeof path) return obj;
+      path = path.replace(/\[(\w+)\]/g, '.$1');   // convert indexes to properties
+      path = path.replace(/^\./, '').split('.');  // strip a leading dot and split at dots
+      var i = 0, len = path.length;               
+      while(obj && i < len) {
+        obj = obj[path[i++]];
+      }
+      return obj;
+    },
 
-      /**
-       * Loops thru all language elements and sets the current language text
-       * 
-       * @param {string} lang
-       * @return
-       * @api private
-       */
-      updateElements = function(lang) {
-        debug('Updating elements with language: ' + lang);
-        var data = options.data[lang],  // data containing language related text. 
-            // Callback called for every item to allow custom handling
-            // If the callback returns false the default handling take place
-            cb = options.onItem || function() { return false; }
-            ;
+    explainAjaxError = function (jqXHR, textStatus, errorThrown) {
+      var error = '';
+      if (jqXHR.status === 0) {
+        error = 'Not connected. Please verify your network connection.';
+      } else if (jqXHR.status == 404) {
+        error = '404 - The requested page could not be found.';
+      } else if (jqXHR.status == 500) {
+        error = '500 - Internal Server Error.';
+      } else if (textStatus === 'parsererror') {
+        error = 'Requested JSON parse failed.';
+      } else if (textStatus === 'timeout') {
+        error = 'Time out error.';
+      } else if (textStatus === 'abort') {
+        error = 'Ajax request aborted.';
+      } else {
+        error = 'Unknown Error Reason ' + jqXHR.status;
+      }
 
-        // Select all elements and loop thru them
-  			$('[data-lang-ckey],[data-lang-tkey],[data-lang-pkey]').each(function () {
-              // jQuery object of the element            
-          var $this = $(this),
-              ckey = $this.attr('data-lang-ckey'), // Key for the content of the element
-              tkey = $this.attr('data-lang-tkey'), // Key for title attribute of the element
-              pkey = $this.attr('data-lang-pkey'), // Key for placeholder attribute of the element
-              cval = deepValue(data, ckey),      // Value of the content
-              tval = deepValue(data, tkey)       // Value of the title attribute
-              pval = deepValue(data, pkey)       // Value of the placeholder attribute
-              ;
+      return {
+        error: error,
+        details: jqXHR.responseText
+      };
+    },
 
-          // Execute callback and if the result is false run the default action
-          if(false === cb(this, lang, ckey, cval, tkey, tval, pkey, pval)) {
-            // If there is a content key set the content and handle "not found" condition
-            if(ckey) {
-              $this
-              .removeClass(options.notFound)
-              .html(cval)
-              .addClass( (cvalue ? undefined : options.notFound ) );
-            }          
-            // If there is a title key set the title attribute and handle "not found" condition
-            if(tkey) {
-              $this
-              .removeClass(options.notFound)
-              .attr('title', (tval || $this.attr('title')) )
-              .addClass( (tval ? undefined : options.notFound ) );
-            }
-            // If there is a placeholder key set the placeholder attribute and handle "not found" condition
-            if(pkey) {
-              $this
-              .removeClass(options.notFound)
-              .attr('placeholder', (pval || $this.attr('placeholder')) )
-              .addClass( (pval ? undefined : options.notFound ) );
-            }
+    /**
+     * Loops thru all language elements and sets the current language text
+     * 
+     * @param {string} lang
+     * @return
+     * @api private
+     */
+    updateElements = function(lang, data) {
+      debug('Updating elements with language: ' + lang, data, languageData);
+
+      // Select all elements and loop thru them
+      $('[data-lang-ckey],[data-lang-tkey],[data-lang-pkey]').each(function () {
+        var 
+          $this = $(this),                     // jQuery object of the element
+          ckey = $this.attr('data-lang-ckey'), // Key for the content of the element
+          tkey = $this.attr('data-lang-tkey'), // Key for title attribute of the element
+          pkey = $this.attr('data-lang-pkey'), // Key for placeholder attribute of the element
+          cval = deepValue(data, ckey),        // Value of the content
+          tval = deepValue(data, tkey),        // Value of the title attribute
+          pval = deepValue(data, pkey)         // Value of the placeholder attribute
+          ;
+
+        // Execute callback and if the result is false run the default action
+        if(!options.onItem || 
+           !options.onItem.apply(
+             null, 
+             [lang, 
+              { 
+               content: { key: ckey, val: cval}, 
+               title: {key: tkey, val: tval}, 
+               placeholder: { key: pkey, val:pval }
+              }
+            ]
+            )
+          ) {
+
+          // If there is a content key set the content and handle "not found" condition
+          if(ckey) {
+            $this
+            .removeClass(options.notFound)
+            .html(cval)
+            .addClass( (cval ? undefined : options.notFound ) );
+          }          
+          // If there is a title key set the title attribute and handle "not found" condition
+          if(tkey) {
+            $this
+            .removeClass(options.notFound)
+            .attr('title', (tval || $this.attr('title')) )
+            .addClass( (tval ? undefined : options.notFound ) );
           }
-        });
-      },
-      
-      /**
-       * Sets configuration values 
-       * 
-       * @param {object} options_
-       * @return
-       * @api private
-       */
-      configure = function(options_) {
-        debug('configure with: ', options_);
-        options = $.extend({}, options, options_);
-      },
+          // If there is a placeholder key set the placeholder attribute and handle "not found" condition
+          if(pkey) {
+            $this
+            .removeClass(options.notFound)
+            .attr('placeholder', (pval || $this.attr('placeholder')) )
+            .addClass( (pval ? undefined : options.notFound ) );
+          }
+        }
+      });
+
+      options.changed && options.changed.apply(null, [err, lang, data]);
+    },
+
+    switchLanguage = function(lang, cb) {
+      var 
+        data = languageData[lang],
+        source = undefined
+        ;
+
+      if(!data) {
+        if('string' == typeof options.source) {
+          debug('Prepare source from string:', options.source);
+          source = options.source.replace('{{LANG}}', lang); 
+        } else 
+
+        if('function' == typeof options.source) {
+          debug('Prepare source by calling:', options.source);
+          source = options.source.apply(null, [lang]);
+        }
+
+        if(source) {
+          debug('Will load language data for "' + lang + '" from source:', source);
+          $.ajax({
+            url: source,
+            success: function(data_, textStatus, jqXHR) { 
+             debug('Received language data:', data_);
+             languageData[lang] = data_;
+             data = languageData[lang];
+             cb && cb.apply(null, [lang, data]);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              err = explainAjaxError(jqXHR, textStatus, errorThrown);
+              cb.apply(null, [lang, data]);
+            }
+          });
+        } else {
+          debug('No language data and no source for language:', lang);
+          cb && cb.apply(null, [lang, data]);  
+        }
+
+      } else {
+        cb && cb.apply(null, [lang, data]);
+      }
+    },
 
       /**
        * Switch language text on elements
@@ -155,28 +226,24 @@ if ('undefined' === typeof jQuery) {
        * @api private
        */
       language = function(lang) {        
-        debug('Switch to language: ', lang);
-        if(!options.data[lang] && options.url) {
-          var url = options.url + lang;
-          debug('Requesting language data for "' + lang + '" from url "' + url + '"');          
-          $.ajax({
-            url: url,
-           success: function(res) { 
-             debug('Got response.', res);          
-             options.data[lang] = res;
-           },
-           complete: function(res) { 
-             if(!options.data[lang]) {
-               debug('Got no valid response. Language "' + lang + '" will not be available!');          
-               options.data[lang] = {}; // Create an empty object so further requests won't lead to ajax calls anymore.
-             }
-             updateElements(lang);
-            }
-          });
-        } else {
-          updateElements(lang);
-        }
+        err = undefined;
+        debug('Switching to language: ', lang);
+        switchLanguage(lang, updateElements);
+      },
+
+      /**
+       * Sets configuration values 
+       * 
+       * @param {object} options_
+       * @return
+       * @api private
+       */
+      configure = function(options_) {
+        debug('Configuring with: ', options_);
+        options = $.extend({}, options, options_);
+        languageData = options.data || {};
       }
+
       ;
 
   // PUBLIC
