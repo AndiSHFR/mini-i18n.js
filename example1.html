@@ -1,7 +1,13 @@
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-
+    <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+      <title>Example mini-i18n</title>
+      <link rel="icon" type="image/x-icon"  href="favicon.ico">
+      <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
+  
     <style>
     /*
       When a language string cannot be found during switching
@@ -25,6 +31,7 @@
     <button data-lang-switch="en-US">English</button>
     <button data-lang-switch="de-DE">Deutsch</button>
     <button data-lang-switch="es-ES">Español</button>
+    <button data-lang-switch="sv-SV">Svenska</button>
     <hr>
 
     <!--
@@ -91,14 +98,18 @@
           
         }
         ;
-
-    $.fn.miniI18n({ 
+    $.fn.miniI18n({
+      debug: true,
+      // onItem: function(lang, values) { console.log('Changing language for:', this, lang, values); return false; },
+      changed: function(err, lang, data) { err && console && console.log(err); console.log('Finished switchinig to language: ', lang); },
+      source: './locales/{{LANG}}.json',
       data: {
         'de-DE': text_deDE,
         'en-US': text_enUS,
         'es-ES': text_esES
       }
     });
+
 
     $(function() {
       // After the document has been loaded initialize the ui to german 'de-DE'
