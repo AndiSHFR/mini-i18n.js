@@ -113,6 +113,36 @@ if ('undefined' === typeof jQuery) {
       };
     },
 
+    parseIniString = function(data){
+      var regex = {
+          section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+          param: /^\s*([^=]+?)\s*=\s*(.*?)\s*$/,
+          comment: /^\s*;.*$/
+      };
+      var value = {};
+      var lines = data.split(/[\r\n]+/);
+      var section = null;
+      lines.forEach(function(line){
+          if(regex.comment.test(line)){
+              return;
+          }else if(regex.param.test(line)){
+              var match = line.match(regex.param);
+              if(section){
+                  value[section][match[1]] = match[2];
+              }else{
+                  value[match[1]] = match[2];
+              }
+          }else if(regex.section.test(line)){
+              var match = line.match(regex.section);
+              value[match[1]] = {};
+              section = match[1];
+          }else if(line.length == 0 && section){
+              section = null;
+          };
+      });
+      return value;
+  },
+      
     /**
      * Loops thru all language elements and sets the current language text
      * 
@@ -199,7 +229,11 @@ if ('undefined' === typeof jQuery) {
             url: source,
             success: function(data_, textStatus, jqXHR) { 
              debug('Received language data:', data_);
-             languageData[lang] = data_;
+             if('string' == typeof data_) {
+              languageData[lang] = parseIniString(data_);
+             }else {
+              languageData[lang] = data_;
+             }              
              data = languageData[lang];
              cb && cb.apply(null, [lang, data]);
             },
